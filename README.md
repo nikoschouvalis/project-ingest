@@ -115,7 +115,91 @@ ingest:ticket
 
 # Or run the whole thing
 ingest:orchestrate
+```
 
+---
+
+## Installing Into a Project
+
+Project Ingest is a set of command definitions that an AI agent (Claude Code or GitHub Copilot) reads and executes. To ingest a project, the framework's command files must be available inside — or alongside — that project's repository. Pick one of the approaches below.
+
+### Option A — Vendor into the target repo (recommended)
+
+Copy the framework's command definitions directly into the project you want to analyze. This keeps everything self-contained and requires no external references.
+
+```bash
+# From the root of the project you want to ingest:
+cd /path/to/your-project
+
+# Clone the framework somewhere temporary
+git clone https://github.com/nikoschouvalis/project-ingest.git /tmp/project-ingest
+
+# Copy the command definitions and defaults into your project
+cp -r /tmp/project-ingest/commands        ./commands
+cp -r /tmp/project-ingest/defaults        ./defaults
+
+# Copy the agent entry points (choose the ones you use)
+cp -r /tmp/project-ingest/.claude         ./.claude      # Claude Code slash commands
+mkdir -p ./.github
+cp /tmp/project-ingest/.github/copilot-instructions.md ./.github/copilot-instructions.md  # GitHub Copilot
+```
+
+### Option B — Add as a git submodule
+
+Keep the framework versioned separately and pull updates with `git submodule update --remote`.
+
+```bash
+cd /path/to/your-project
+git submodule add https://github.com/nikoschouvalis/project-ingest.git .project-ingest-framework
+```
+
+With this layout, the command entry points still need to live where the agent looks for them (`.claude/commands/` for Claude Code, `.github/copilot-instructions.md` for Copilot), so symlink or copy those from the submodule:
+
+```bash
+ln -s ../.project-ingest-framework/.claude/commands .claude/commands
+cp .project-ingest-framework/.github/copilot-instructions.md .github/copilot-instructions.md
+```
+
+### Run the pipeline
+
+Once the command files are in place, open the project in your agent and start with `init`, which creates the `.project-ingest/` workspace and configuration:
+
+```bash
+ingest:init          # interactive quiz -> writes .project-ingest/config.md
+ingest:scan          # gather findings
+ingest:analyze       # assign severity and root cause
+ingest:plan          # group into workstreams
+ingest:ticket        # produce agent-ready tickets
+# ...or run everything:
+ingest:orchestrate
+```
+
+In GitHub Copilot, invoke the same steps with the slash-command form (`/ingest-init`, `/ingest-scan`, ...); Copilot resolves them via `.github/copilot-instructions.md`.
+
+### Where artifacts land
+
+All output is written to a `.project-ingest/` directory **inside the target project** — never in the framework repo:
+
+```
+your-project/
+├── .project-ingest/
+│   ├── config.md            # created by ingest:init (required by all commands)
+│   ├── manifest.md          # run history and current state
+│   ├── scans/               # scan output
+│   ├── analysis/            # analysis output
+│   ├── plan/                # remediation plan and workstreams
+│   ├── tickets/             # generated tickets
+│   └── reports/             # generated reports
+└── ... your code ...
+```
+
+Add `.project-ingest/` to version control if you want run history tracked, or to `.gitignore` if you prefer to keep analysis artifacts local.
+
+---
+
+## Repository Layout
+
+```
 project-ingest/
 ├── README.md
 ├── CHANGELOG.md
@@ -141,4 +225,4 @@ project-ingest/
     ├── report/
     ├── diff/
     └── orchestrate/
-    
+```
