@@ -141,8 +141,11 @@ cp -r /tmp/project-ingest/defaults        ./defaults
 # Copy the agent entry points (choose the ones you use)
 cp -r /tmp/project-ingest/.claude         ./.claude      # Claude Code slash commands
 mkdir -p ./.github
-cp /tmp/project-ingest/.github/copilot-instructions.md ./.github/copilot-instructions.md  # GitHub Copilot
+cp /tmp/project-ingest/.github/copilot-instructions.md ./.github/copilot-instructions.md  # GitHub Copilot instructions
+cp -r /tmp/project-ingest/.github/prompts ./.github/prompts   # GitHub Copilot /ingest-* slash commands
 ```
+
+> **GitHub Copilot slash commands require `.github/prompts/`.** The `/ingest-*` commands only appear in Copilot chat when the `.github/prompts/*.prompt.md` files are present in the target repo. If you clone or pull this framework and the commands don't show up, make sure `.github/prompts/` was copied over.
 
 ### Option B — Add as a git submodule
 
@@ -156,8 +159,10 @@ git submodule add https://github.com/nikoschouvalis/project-ingest.git .project-
 With this layout, the command entry points still need to live where the agent looks for them (`.claude/commands/` for Claude Code, `.github/copilot-instructions.md` for Copilot), so symlink or copy those from the submodule:
 
 ```bash
+mkdir -p .claude .github
 ln -s ../.project-ingest-framework/.claude/commands .claude/commands
 cp .project-ingest-framework/.github/copilot-instructions.md .github/copilot-instructions.md
+cp -r .project-ingest-framework/.github/prompts .github/prompts   # required for Copilot /ingest-* slash commands
 ```
 
 ### Run the pipeline
@@ -174,7 +179,7 @@ ingest:ticket        # produce agent-ready tickets
 ingest:orchestrate
 ```
 
-In GitHub Copilot, invoke the same steps with the slash-command form (`/ingest-init`, `/ingest-scan`, ...); Copilot resolves them via `.github/copilot-instructions.md`.
+In GitHub Copilot, invoke the same steps with the slash-command form (`/ingest-init`, `/ingest-scan`, ...). These slash commands are defined by the `.github/prompts/*.prompt.md` files, which point at the instruction files under `commands/`. They only appear if `.github/prompts/` exists in the repo, so ensure it was copied in (see above). `.github/copilot-instructions.md` provides the always-on framework context.
 
 ### Where artifacts land
 
@@ -203,6 +208,11 @@ Add `.project-ingest/` to version control if you want run history tracked, or to
 project-ingest/
 ├── README.md
 ├── CHANGELOG.md
+├── .claude/
+│   └── commands/            # Claude Code slash-command entry points
+├── .github/
+│   ├── copilot-instructions.md  # always-on Copilot framework context
+│   └── prompts/             # Copilot /ingest-* slash-command wrappers (required)
 ├── docs/
 │   ├── architecture.md
 │   ├── commands.md
