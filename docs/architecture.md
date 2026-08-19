@@ -1,7 +1,3 @@
----
-
-# File 2: docs/architecture.md
-
 ```markdown
 # Architecture & Pipeline
 
